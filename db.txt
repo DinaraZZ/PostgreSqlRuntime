@@ -21,3 +21,7 @@ common line tools (psql + ...) +
 -- where
 --group by
 -- order by
+-- limit
+
+where работают до group by, что не позволяет исп рез агрегатных функ (каунт, сум)
+having - срабатывает после group by, может исп рез агр функ

@@ -1,6 +1,21 @@
 ------ Один к одному
+drop table if exists product_order;
+drop table if exists orders;
+drop table if exists product;
 drop table if exists users;
 drop table if exists user_data;
+drop table if exists category;
+drop table if exists discounts;
+
+create table user_data
+(
+    id              serial8,
+    document_number varchar not null,
+    f_name          varchar not null,
+    l_name          varchar not null,
+    birthdate       date    not null,
+    primary key (id)
+);
 
 create table users
 (
@@ -11,16 +26,6 @@ create table users
     primary key (id),
     unique (user_data_id),
     foreign key (user_data_id) references user_data (id)
-);
-
-create table user_data
-(
-    id              serial8,
-    document_number varchar not null,
-    f_name          varchar not null,
-    l_name          varchar not null,
-    birthdate       date    not null,
-    primary key (id)
 );
 
 insert into user_data(document_number, f_name, l_name, birthdate)
@@ -38,9 +43,6 @@ from users u
 
 
 ------ Один ко многим
-drop table if exists category;
-drop table if exists product;
-
 create table category
 (
     id   serial8,
@@ -81,16 +83,21 @@ order by average_price desc;
 
 
 ------ Многие ко многим
-drop table if exists product_order;
-drop table if exists orders;
+create table discounts
+(
+    id       serial8,
+    discount int8 not null,
+    primary key (id)
+);
 
 create table orders
 (
-    id        serial8,
-    status    varchar   not null,
-    date_time timestamp not null,
-    discount  int8 default 0,
-    primary key (id)
+    id          serial8,
+    discount_id int8,
+    status      varchar   not null,
+    date_time   timestamp not null,
+    primary key (id),
+    foreign key (discount_id) references discounts (id)
 );
 
 create table product_order
@@ -104,11 +111,18 @@ create table product_order
     foreign key (orders_id) references orders (id)
 );
 
-insert into orders(status, date_time, discount)
-values ('Доставлен', '2022-01-12 12:45', 10),
-       ('Оформлен', '2024-02-22 21:16', 0),
-       ('Отправлен', '2024-01-30 05:06', 22),
-       ('Доставлен', '2024-01-02', 5);
+insert into discounts(discount)
+values (5),
+       (10),
+       (15);
+
+insert into orders(status, date_time, discount_id)
+values ('Доставлен', '2022-01-12 12:45', 1),
+       ('Отправлен', '2024-01-30 05:06', 3),
+       ('Доставлен', '2024-01-02', 2);
+
+insert into orders(status, date_time)
+values ('Оформлен', '2024-02-22 21:16');
 
 insert into product_order(product_id, orders_id, product_quantity)
 values (1, 3, 6),
@@ -121,13 +135,27 @@ select o.*,
 --        count(o.id) products_quantity,
        sum(po.product_quantity)                                                                products_quantity, -- за счёт группировки по o.id
 --        sum(p.price * po.product_quantity) order_price
-       sum(p.price * po.product_quantity - (o.discount * p.price / 100) * po.product_quantity) order_price
+       sum(p.price * po.product_quantity - (d.discount * p.price / 100) * po.product_quantity) order_price
 from orders o
          join product_order po on o.id = po.orders_id
          join product p on p.id = po.product_id
+         join discounts d on o.discount_id = d.id
 group by o.id
 order by o.id;
 
+--
+select o.id,
+       coalesce(o.discount_id, 0),
+       o.status,
+       o.date_time,
+       sum(po.product_quantity)                                                                             products_quantity,
+       sum(p.price * po.product_quantity - (coalesce(d.discount, 1) * p.price / 100) * po.product_quantity) order_price
+from orders o
+         join product_order po on o.id = po.orders_id
+         join product p on p.id = po.product_id
+         left join discounts d on o.discount_id = d.id
+group by o.id
+order by o.id;
 
 
 

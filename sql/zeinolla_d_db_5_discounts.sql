@@ -1,4 +1,5 @@
-drop table if exists product_category_discounts;
+drop table if exists product_discounts;
+drop table if exists category_discounts;
 drop table if exists discounts;
 drop table if exists product;
 drop table if exists category;
@@ -27,15 +28,23 @@ create table discounts
     primary key (id)
 );
 
-create table product_category_discounts
+create table product_discounts
 (
     id          serial8,
-    category_id int8 default null,
     product_id  int8 default null,
     discount_id int8 not null,
     primary key (id),
-    foreign key (category_id) references category (id),
     foreign key (product_id) references product (id),
+    foreign key (discount_id) references discounts (id)
+);
+
+create table category_discounts
+(
+    id          serial8,
+    category_id int8 default null,
+    discount_id int8 not null,
+    primary key (id),
+    foreign key (category_id) references category (id),
     foreign key (discount_id) references discounts (id)
 );
 
@@ -60,5 +69,80 @@ values (2),
        (20),
        (50);
 
-insert into product_category_discounts(category_id, product_id, discount_id)
-values (1, null, 2); --otdelno tabl
+insert into category_discounts(category_id, discount_id)
+values (1, 2),
+       (2, 3),
+       (1, 1),
+       (3, 6);
+
+insert into product_discounts(product_id, discount_id)
+values (1, 4),
+       (3, 2),
+       (4, 5),
+       (6, 1);
+
+-- скидка товаров по категориям
+select p.*, sum(d.discount) final_discount, (100 - sum(d.discount)) / 100 * p.price final_price
+from product p
+         join category c on c.id = p.category_id
+         join category_discounts cd on cd.category_id = c.id
+         join discounts d on d.id = cd.discount_id
+-- group by cd.category_id, p.id, p.category_id, p.name, p.price
+group by p.id, c.id
+order by c.id;
+
+-- категорию с наиб процентом с лимитом
+select c.*, sum(d.discount) total_discount
+from category c
+         join category_discounts cd on cd.category_id = c.id
+         join discounts d on d.id = cd.discount_id
+group by c.id
+order by total_discount desc
+limit 1; -- кол-во выводимых строк
+
+update category_discounts
+set discount_id = 6
+where category_id = 2;
+-- категорию с наиб процентом с подзапросом
+select c.*, sum(d.discount) td
+from category c
+         join category_discounts cd on cd.category_id = c.id
+         join discounts d on d.id = cd.discount_id
+group by c.id
+having sum(d.discount) = (select sum(d.discount) total_discount
+                          from category_discounts cd
+                                   join discounts d on d.id = cd.discount_id
+                          group by cd.category_id
+                          order by total_discount desc
+                          limit 1);
+-- max
+
+-- подзапрос
+select p.*
+from product p
+where p.price = (select max(p.price) from product p);
+
+
+-- INNER JOIN
+select c.name, avg(p.price)
+from category c
+         join product p on c.id = p.category_id
+group by c.id;
+
+delete
+from product_discounts
+where product_id = 4;
+delete
+from product
+where category_id = 3;
+-- LEFT JOIN
+select c.name, coalesce(avg(p.price), 0)
+from category c
+         left join product p on c.id = p.category_id
+group by c.id;
+
+-- RIGHT JOIN
+select c.name, coalesce(avg(p.price), 0)
+from product p
+         right join category c on p.category_id = c.id
+group by c.id;
