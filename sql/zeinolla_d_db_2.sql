@@ -145,11 +145,11 @@ order by o.id;
 
 --
 select o.id,
-       coalesce(o.discount_id, 0),
+       coalesce(o.discount_id, 0) discount,
        o.status,
        o.date_time,
        sum(po.product_quantity)                                                                             products_quantity,
-       sum(p.price * po.product_quantity - (coalesce(d.discount, 1) * p.price / 100) * po.product_quantity) order_price
+       sum(p.price * po.product_quantity - (coalesce(d.discount, 0) * p.price / 100) * po.product_quantity) order_price
 from orders o
          join product_order po on o.id = po.orders_id
          join product p on p.id = po.product_id
