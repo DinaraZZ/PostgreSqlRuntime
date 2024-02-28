@@ -146,3 +146,31 @@ select c.name, coalesce(avg(p.price), 0)
 from product p
          right join category c on p.category_id = c.id
 group by c.id;
+
+insert into product(category_id, name, price)
+values (1, 'iPhone 4S', 500);
+insert into product_discounts(product_id, discount_id)
+values (7, 4);
+insert into product_discounts(product_id, discount_id)
+values (7, 1);
+-- товары со скидками категорий и самого товара
+select p.*,
+       d1.disc                                                                 category_discount,
+       d2.disc                                                                 product_discount,
+       p.price - (coalesce(d1.disc, 0) + coalesce(d2.disc, 0)) * p.price / 100 final_price
+from product p
+         left join category c on c.id = p.category_id
+         left join category_discounts cd on cd.category_id = c.id
+         left join product_discounts pd on pd.product_id = p.id
+         left join (select c1.id c_id, coalesce(sum(d.discount), 0) disc
+                    from discounts d
+                             join category_discounts cd1 on d.id = cd1.discount_id
+                             join category c1 on cd1.category_id = c1.id
+                    group by c1.id) d1 on d1.c_id = c.id
+         left join (select p1.id p_id, coalesce(sum(d.discount), 0) disc
+                    from discounts d
+                             join product_discounts pd1 on d.id = pd1.discount_id
+                             join product p1 on pd1.product_id = p1.id
+                    group by p1.id) d2 on d2.p_id = p.id
+group by p.id, c.id, d1.disc, d2.disc
+order by c.id;
