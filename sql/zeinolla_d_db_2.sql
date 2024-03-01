@@ -145,7 +145,7 @@ order by o.id;
 
 --
 select o.id,
-       coalesce(o.discount_id, 0) discount,
+       coalesce(o.discount_id, 0)                                                                           discount,
        o.status,
        o.date_time,
        sum(po.product_quantity)                                                                             products_quantity,
@@ -157,9 +157,75 @@ from orders o
 group by o.id
 order by o.id;
 
+-- названия категории, товары которой покупались чаще
 
 
+--4
+select c.id, c.name category, sum(ps.sold_amount) products_sold
+from category c
+         join (select sum(po.product_quantity) sold_amount, c2.id c_a
+               from product_order po
+                        left join product p on p.id = po.product_id
+                        join category c2 on c2.id = p.category_id
+               group by po.product_id, c_a) ps on ps.c_a = c.id
+group by c.id
+having sum(ps.sold_amount) = (select sum(ps.sold_amount) sa
+                              from category c
+                                       left join (select sum(po.product_quantity) sold_amount, c2.id c_a
+                                                  from product_order po
+                                                           left join product p on p.id = po.product_id
+                                                           join category c2 on c2.id = p.category_id
+                                                  group by po.product_id, c_a) ps on ps.c_a = c.id
+                              group by c.id
+                              order by sa desc
+                              limit 1);
+--3
+select c.*, sum(ps.sold_amount) sa
+from category c
+         left join (select sum(po.product_quantity) sold_amount, c2.id c_a
+                    from product_order po
+                             left join product p on p.id = po.product_id
+                             join category c2 on c2.id = p.category_id
+                    group by po.product_id, c_a) ps on ps.c_a = c.id
+group by c.id
+order by sa desc
+limit 1;
+--2
+select p.name product, c.name category, po.product_id, sum(po.product_quantity) sold_amount
+from product_order po
+         left join product p on p.id = po.product_id
+         join category c on c.id = p.category_id
+group by po.product_id, c.name, p.name;
+--1
+select po.product_id, sum(po.product_quantity)
+from product_order po
+group by po.product_id;
 
+
+select c.*, sum(sa.sold_amount)
+from category c
+         join (select sum(po.product_quantity) sold_amount, c1.id c_id
+               from product_order po
+                        left join product p on p.id = po.product_id
+                        join category c1 on c1.id = p.category_id
+               group by po.product_id, c_id) sa on sa.c_id = c.id
+group by c.id;
+
+select c.*, sum(sa.sold_amount)
+from category c
+         join (select sum(po.product_quantity) sold_amount, c1.id c_id
+               from product_order po
+                        left join product p on p.id = po.product_id
+                        join category c1 on c1.id = p.category_id
+               group by po.product_id, c_id) sa on sa.c_id = c.id
+group by c.id
+having sum(sa.sold_amount) = ();
+
+select c.id, sum(po.product_quantity)
+from product_order po
+         join product p on po.product_id = p.id
+         join category c on p.category_id = c.id
+group by c.id;
 
 
 
