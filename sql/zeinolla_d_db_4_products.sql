@@ -96,3 +96,15 @@ from product_characteristics pc
          join category c on p.category_id = c.id
          join characteristics c2 on pc.characteristics_id = c2.id
 where p.id = 3;
+
+-- товары, у которых есть характ производитель (интел) + кол ядер
+select p.*
+from product p
+         join (select pc2.product_id p_id
+               from product_characteristics pc2
+               where pc2.characteristics_id = 2
+                 and pc2.description = '8') pc on pc.p_id = p.id
+         join (select pc2.product_id
+               from product_characteristics pc2
+               where pc2.characteristics_id = 1
+                 and pc2.description = 'Intel') pc1 on pc1.product_id = p.id;

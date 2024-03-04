@@ -158,8 +158,6 @@ group by o.id
 order by o.id;
 
 -- названия категории, товары которой покупались чаще
-
-
 --4
 select c.id, c.name category, sum(ps.sold_amount) products_sold
 from category c
@@ -202,7 +200,7 @@ from product_order po
 group by po.product_id;
 
 
-select c.*, sum(sa.sold_amount)
+/*select c.*, sum(sa.sold_amount)
 from category c
          join (select sum(po.product_quantity) sold_amount, c1.id c_id
                from product_order po
@@ -225,7 +223,7 @@ select c.id, sum(po.product_quantity)
 from product_order po
          join product p on po.product_id = p.id
          join category c on p.category_id = c.id
-group by c.id;
+group by c.id;*/
 
 
 
