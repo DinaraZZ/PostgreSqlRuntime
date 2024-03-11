@@ -108,3 +108,24 @@ from product p
                from product_characteristics pc2
                where pc2.characteristics_id = 1
                  and pc2.description = 'Intel') pc1 on pc1.product_id = p.id;
+
+\d category; --cmd
+
+alter table product -- real=float
+    add column price double precision;
+
+update product
+set price = 1200
+where id = 1;
+
+update product
+set price = 1000
+where id = 2;
+
+update product
+set price = 900
+where id = 3;
+
+update product
+set price = 1150.5
+where id = 4;
