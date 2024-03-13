@@ -129,3 +129,9 @@ where id = 3;
 update product
 set price = 1150.5
 where id = 4;
+
+update product
+set price = price * (100 + 10) / 100
+where category_id = (select c.id
+                     from category c
+                     where c.name = 'Мониторы');
